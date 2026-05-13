@@ -1,49 +1,48 @@
-# 🖥️ TrustFlow Frontend
+# ⛓️ Birkinlabs Core
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Next.js](https://img.shields.io/badge/Next.js-13-black)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+[![Rust](https://img.shields.io/badge/Rust-1.74.0-orange)](https://www.rust-lang.org/)
+[![Soroban SDK](https://img.shields.io/badge/Soroban_SDK-20.0.0-blue)](https://soroban.stellar.org/)
 
-> **The decentralized UI for the TrustFlow gig-economy protocol.**
+> **Soroban smart contracts powering Birkinlabs on-chain payments and marketplace logic.**
 
-TrustFlow Frontend is the Next.js web application that gives users a seamless interface for creating escrows, tracking milestones, resolving disputes, and managing their on-chain reputation — all powered by Soroban smart contracts on the Stellar network.
+Birkinlabs Core is the on-chain layer of the Birkinlabs Protocol — Rust smart contracts deployed on Stellar/Soroban that handle payment escrow, marketplace listings, seller verification, and on-chain governance for the e-commerce platform.
 
 ---
 
 ## ✨ Core Features
 
-- 🔗 **Wallet Integration**: One-click Stellar wallet connection via Freighter.
-- 💼 **Escrow Dashboard**: Create, fund, and track milestone-based escrow vaults.
-- ⚖️ **Dispute Interface**: Submit evidence, monitor juror votes, and receive settlement outcomes.
-- 🌗 **Dark / Light Mode**: System-aware theme toggling via the `useTheme` hook.
-- 🔔 **Toast Notifications**: Non-blocking feedback for all transaction states.
-- 📱 **Responsive Design**: Mobile-first layout across all breakpoints.
+- 💳 **Payment Contracts**: Trustless token transfers from buyer to seller, with escrow support.
+- 🏪 **Marketplace Listings**: On-chain product registry with ownership verification.
+- 🔒 **Escrow Vault**: Hold payments until delivery is confirmed — no chargebacks.
+- 🏛️ **Governance**: Protocol fee and parameter changes governed by token holders.
+- 🪙 **BRK Token**: Native protocol token for fee discounts and governance voting.
+- 📦 **Order Settlement**: Automated fund release on delivery confirmation.
 
 ---
 
 ## 🗂️ Project Structure
 
 ```
-├── pages/
-│   ├── _app.tsx            # App shell — providers, global styles
-│   └── index.tsx           # Landing / dashboard entry point
-├── components/
-│   ├── atoms/              # Primitive UI: Button, Card, Input, Checkbox, ProgressBar, Toast
-│   ├── molecules/          # Composed UI: Deposits, FormPledge, TransactionModal, WalletData
-│   └── organisms/          # Page-level sections: Navbar, Campaign, Pledge
-├── hooks/
-│   ├── useAccount.ts       # Stellar wallet account state
-│   ├── useSubscription.ts  # Real-time contract event subscriptions
-│   ├── useTheme.ts         # Dark/light theme management
-│   ├── useToast.ts         # Toast notification queue
-│   └── useIsMounted.ts     # SSR hydration safety guard
-├── shared/
-│   ├── contracts.ts        # Shared contract address constants
-│   └── utils.ts            # Shared utility functions
-├── styles/
-│   ├── globals.css         # Global styles and CSS variables
-│   └── Home.module.css     # Homepage styles
-└── public/                 # Static assets and favicon
+contracts/
+├── src/
+│   ├── payment.rs          # Core payment and token transfer logic
+│   ├── marketplace.rs      # Product listing registry
+│   ├── escrow.rs           # Escrow vault — hold, release, refund
+│   ├── governance.rs       # Protocol governance and voting
+│   ├── token.rs            # BRK token contract
+│   ├── storage.rs          # Persistent contract storage
+│   ├── types.rs            # Shared data types
+│   ├── events.rs           # Contract event definitions
+│   └── errors.rs           # Error codes
+scripts/
+├── deploy.sh               # Deploy to Stellar network
+├── migrate.sh              # Contract migrations
+└── setup.sh                # Dev environment setup
+tests/
+├── payment.test.ts         # Payment contract tests
+├── marketplace.test.ts     # Marketplace tests
+└── integration.test.ts     # End-to-end tests
 ```
 
 ---
@@ -51,99 +50,68 @@ TrustFlow Frontend is the Next.js web application that gives users a seamless in
 ## 🚀 Getting Started
 
 ### Prerequisites
+- Rust >= 1.74.0
+- Soroban CLI
+- Funded Stellar testnet account
 
-- Node.js >= 18
-- [Freighter Wallet](https://www.freighter.app/) browser extension
-- A funded Stellar testnet account
-
-### Installation
-
-```bash
-npm install
-```
-
-### Environment Setup
+### Build
 
 ```bash
-cp .env.example .env
+cargo build --target wasm32-unknown-unknown --release
 ```
 
-Key variables:
-
-```env
-NEXT_PUBLIC_STELLAR_NETWORK=TESTNET
-NEXT_PUBLIC_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
-NEXT_PUBLIC_ESCROW_CONTRACT_ID=your-contract-id
-```
-
-### Running
+### Deploy
 
 ```bash
-# Development
-npm run dev
-
-# Production build
-npm run build && npm start
+./scripts/setup.sh
+./scripts/deploy.sh testnet
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+### Test
+
+```bash
+cargo test
+```
 
 ---
 
-## 📖 Component Guide
+## 📖 Contract Reference
 
-### Atoms
-Base-level, stateless UI primitives. Use these directly or compose them into molecules.
-- `Button` — primary, secondary, and loading states.
-- `AmountInput` — numeric input with token denomination label.
-- `ProgressBar` — milestone completion indicator.
-- `Toast` — auto-dismissing notification bubble.
-- `ThemeToggle` — dark/light mode switcher.
+### Payment Flow
 
-### Molecules
-Stateful compositions built from atoms.
-- `FormPledge` — full pledge form with validation and submission.
-- `TransactionModal` — step-by-step transaction status overlay.
-- `WalletData` — connected wallet summary card.
-- `Deposits` — list of active deposits with release controls.
+1. Buyer connects wallet and adds item to cart.
+2. SDK builds a payment transaction to the escrow contract.
+3. Buyer signs via Freighter — funds locked on-chain.
+4. Seller ships the order.
+5. Buyer confirms delivery — escrow releases funds to seller.
+6. If disputed, governance jurors vote on resolution.
 
-### Organisms
-Full page sections wired to on-chain data.
-- `Navbar` — responsive top nav with wallet connect.
-- `Campaign` — campaign detail with funding progress.
-- `Pledge` — pledge workflow from input to confirmation.
+### BRK Token
 
----
-
-## 🛡️ Security
-
-- No private keys ever touch the browser — all signing delegated to Freighter.
-- Contract IDs and RPC URLs loaded strictly from environment variables.
-- XDR simulation run before every transaction submission.
+The BRK token grants fee discounts on purchases and voting weight in protocol governance. Distributed to early buyers and sellers.
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] **Profile Pages**: On-chain reputation and work history viewer.
-- [ ] **Dispute UI**: Full juror dashboard with evidence upload and voting.
-- [ ] **Mobile App**: React Native port leveraging shared hooks and types.
-- [ ] **Internationalisation (i18n)**: Multi-language support via next-intl.
+- [ ] **Multi-currency Escrow**: Support USDC, XLM, and custom Stellar assets.
+- [ ] **Reputation Oracle**: On-chain seller/buyer reputation scores.
+- [ ] **DAO Treasury**: Protocol fees accumulate in community-governed treasury.
+- [ ] **Dispute Resolution**: Community juror voting for payment disputes.
 
 ---
 
 ## 🤝 Community & Support
 
-- **Documentation**: [Full Docs](https://docs.trustflow.xyz)
-- **Issues**: [Report bugs or request features](https://github.com/trustflow-protocol/trustflow-frontend/issues)
-- **Discussions**: [Stellar Community Forum](https://stellar.org/community)
+- **Docs**: [docs.birkinlabs.xyz](https://docs.birkinlabs.xyz)
+- **Issues**: [birkinlabs-core/issues](https://github.com/Birkinlabs-Protocol/birkinlabs-core/issues)
 
 ---
 
-*Securing the future of work, one transaction at a time.*
+*Shop freely. Pay trustlessly.*
 
 ---
 
 ## 📜 License
 
-MIT License. Copyright (c) 2026 TrustFlow Protocol.
+MIT License. Copyright (c) 2026 Birkinlabs Protocol.
