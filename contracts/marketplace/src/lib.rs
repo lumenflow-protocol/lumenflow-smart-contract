@@ -23,6 +23,7 @@ pub struct Listing {
     pub active: bool,
 }
 
+#[contract]
 pub struct MarketplaceContract;
 
 #[contractimpl]
@@ -134,7 +135,7 @@ mod test {
         let seller = Address::generate(&env);
         let token = Address::generate(&env);
 
-        let contract_id = env.register(MarketplaceContract, ());
+        let contract_id = env.register_contract(None, MarketplaceContract);
         let client = MarketplaceContractClient::new(&env, &contract_id);
 
         client.initialize(&admin);

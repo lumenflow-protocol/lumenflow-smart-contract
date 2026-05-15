@@ -17,6 +17,7 @@ pub enum DataKey {
     Decimals,
 }
 
+#[contract]
 pub struct BrkToken;
 
 #[contractimpl]
@@ -107,7 +108,7 @@ mod test {
         let admin = Address::generate(&env);
         let buyer = Address::generate(&env);
 
-        let contract_id = env.register(BrkToken, ());
+        let contract_id = env.register_contract(None, BrkToken);
         let client = BrkTokenClient::new(&env, &contract_id);
 
         client.initialize(&admin, &1_000_000_0000000i128);

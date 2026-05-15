@@ -28,6 +28,7 @@ pub struct Vault {
     pub status: VaultStatus,
 }
 
+#[contract]
 pub struct EscrowContract;
 
 #[contractimpl]
@@ -56,8 +57,8 @@ impl EscrowContract {
         token_client.transfer(&buyer, &env.current_contract_address(), &amount);
 
         env.storage().persistent().set(
-            &DataKey::Vault(vault_id),
-            &Vault { id: vault_id.clone(), buyer, seller, token, amount, status: VaultStatus::Locked },
+            &DataKey::Vault(vault_id.clone()),
+            &Vault { id: vault_id, buyer, seller, token, amount, status: VaultStatus::Locked },
         );
     }
 

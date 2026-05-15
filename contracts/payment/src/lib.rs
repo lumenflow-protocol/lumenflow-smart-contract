@@ -12,7 +12,7 @@ pub enum DataKey {
 }
 
 #[contracttype]
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum OrderStatus {
     Pending,
     Paid,
@@ -32,6 +32,7 @@ pub struct Order {
     pub status: OrderStatus,
 }
 
+#[contract]
 pub struct PaymentContract;
 
 #[contractimpl]
@@ -161,7 +162,7 @@ mod test {
         sac.mint(&buyer, &1000);
 
         // Deploy payment contract
-        let contract_id = env.register(PaymentContract, ());
+        let contract_id = env.register_contract(None, PaymentContract);
         let client = PaymentContractClient::new(&env, &contract_id);
 
         client.initialize(&admin);
