@@ -2,10 +2,7 @@
 resolver = "2"
 
 members = [
-    "contracts/payment",
-    "contracts/marketplace",
-    "contracts/escrow",
-    "contracts/token",
+    "contracts/stream",
 ]
 
 [workspace.package]

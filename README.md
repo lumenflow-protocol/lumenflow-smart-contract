@@ -1,117 +1,128 @@
-# ⛓️ Birkinlabs Core
+# lumenflow-smart-contract
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/Rust-1.74.0-orange)](https://www.rust-lang.org/)
-[![Soroban SDK](https://img.shields.io/badge/Soroban_SDK-20.0.0-blue)](https://soroban.stellar.org/)
+[![Rust](https://img.shields.io/badge/Rust-1.74+-orange)](https://www.rust-lang.org/)
+[![Soroban SDK](https://img.shields.io/badge/Soroban_SDK-21.0.0-8B5CF6)](https://soroban.stellar.org/)
+[![Tests](https://img.shields.io/badge/tests-5%20passing-brightgreen)](./contracts/stream/src/lib.rs)
 
-> **Soroban smart contracts powering Birkinlabs on-chain payments and marketplace logic.**
-
-Birkinlabs Core is the on-chain layer of the Birkinlabs Protocol — Rust smart contracts deployed on Stellar/Soroban that handle payment escrow, marketplace listings, seller verification, and on-chain governance for the e-commerce platform.
-
----
-
-## ✨ Core Features
-
-- 💳 **Payment Contracts**: Trustless token transfers from buyer to seller, with escrow support.
-- 🏪 **Marketplace Listings**: On-chain product registry with ownership verification.
-- 🔒 **Escrow Vault**: Hold payments until delivery is confirmed — no chargebacks.
-- 🏛️ **Governance**: Protocol fee and parameter changes governed by token holders.
-- 🪙 **BRK Token**: Native protocol token for fee discounts and governance voting.
-- 📦 **Order Settlement**: Automated fund release on delivery confirmation.
+> Soroban smart contract powering LumenFlow — real-time per-second payment streaming on Stellar.
 
 ---
 
-## 🗂️ Project Structure
+## Overview
+
+The stream contract is the on-chain core of LumenFlow. A sender deposits tokens and specifies a rate (tokens per second). The contract tracks elapsed time and releases the proportional amount to the recipient — who can withdraw at any time. The sender can pause, resume, or cancel the stream at any point.
+
+---
+
+## Contract structure
 
 ```
-contracts/
-├── src/
-│   ├── payment.rs          # Core payment and token transfer logic
-│   ├── marketplace.rs      # Product listing registry
-│   ├── escrow.rs           # Escrow vault — hold, release, refund
-│   ├── governance.rs       # Protocol governance and voting
-│   ├── token.rs            # BRK token contract
-│   ├── storage.rs          # Persistent contract storage
-│   ├── types.rs            # Shared data types
-│   ├── events.rs           # Contract event definitions
-│   └── errors.rs           # Error codes
-scripts/
-├── deploy.sh               # Deploy to Stellar network
-├── migrate.sh              # Contract migrations
-└── setup.sh                # Dev environment setup
-tests/
-├── payment.test.ts         # Payment contract tests
-├── marketplace.test.ts     # Marketplace tests
-└── integration.test.ts     # End-to-end tests
+contracts/stream/src/
+├── lib.rs        — public contract functions + tests
+├── types.rs      — Stream struct, StreamStatus enum
+├── storage.rs    — auto-incrementing stream ID, read/write helpers
+├── events.rs     — on-chain events (CREATED, WITHDRAW, CANCEL, PAUSED, RESUMED)
+└── errors.rs     — error codes
 ```
 
 ---
 
-## 🚀 Getting Started
+## Contract functions
+
+| Function | Caller | Description |
+|---|---|---|
+| `create_stream(sender, recipient, token, deposit, rate_per_second, duration)` | Sender | Lock tokens and start a stream |
+| `withdraw(stream_id, recipient)` | Recipient | Pull all accrued tokens |
+| `cancel_stream(stream_id, sender)` | Sender | Accrued → recipient, remainder → sender |
+| `pause_stream(stream_id, sender)` | Sender | Freeze accrual |
+| `resume_stream(stream_id, sender)` | Sender | Resume accrual, shifting time window |
+| `balance_of(stream_id)` | Anyone | Tokens available to withdraw right now |
+| `get_stream(stream_id)` | Anyone | Full stream state |
+
+### Balance calculation
+
+```
+effective_end = min(now, stop_time)
+elapsed       = effective_end - start_time + elapsed_before_pause
+streamed      = min(elapsed × rate_per_second, deposit)
+available     = streamed - withdrawn
+```
+
+---
+
+## Getting started
 
 ### Prerequisites
-- Rust >= 1.74.0
-- Soroban CLI
-- Funded Stellar testnet account
-
-### Build
 
 ```bash
-cargo build --target wasm32-unknown-unknown --release
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Add WASM target
+rustup target add wasm32-unknown-unknown
+
+# Install Stellar CLI
+cargo install --locked stellar-cli --features opt
 ```
 
-### Deploy
-
-```bash
-./scripts/setup.sh
-./scripts/deploy.sh testnet
-```
-
-### Test
+### Run tests
 
 ```bash
 cargo test
 ```
 
----
+Expected output:
+```
+running 5 tests
+test test::test_create_and_withdraw     ... ok
+test test::test_cancel_splits_funds     ... ok
+test test::test_pause_and_resume        ... ok
+test test::test_full_stream_completes   ... ok
+test test::test_wrong_recipient_cannot_withdraw ... ok
 
-## 📖 Contract Reference
+test result: ok. 5 passed; 0 failed
+```
 
-### Payment Flow
+### Build WASM
 
-1. Buyer connects wallet and adds item to cart.
-2. SDK builds a payment transaction to the escrow contract.
-3. Buyer signs via Freighter — funds locked on-chain.
-4. Seller ships the order.
-5. Buyer confirms delivery — escrow releases funds to seller.
-6. If disputed, governance jurors vote on resolution.
+```bash
+cargo build --target wasm32-unknown-unknown --release
+```
 
-### BRK Token
+Output: `target/wasm32-unknown-unknown/release/lumenflow_stream.wasm`
 
-The BRK token grants fee discounts on purchases and voting weight in protocol governance. Distributed to early buyers and sellers.
+### Deploy to testnet
 
----
+```bash
+# Fund an account
+stellar keys generate --global alice --network testnet --fund
 
-## 🗺️ Roadmap
-
-- [ ] **Multi-currency Escrow**: Support USDC, XLM, and custom Stellar assets.
-- [ ] **Reputation Oracle**: On-chain seller/buyer reputation scores.
-- [ ] **DAO Treasury**: Protocol fees accumulate in community-governed treasury.
-- [ ] **Dispute Resolution**: Community juror voting for payment disputes.
-
----
-
-## 🤝 Community & Support
-
-- **Docs**: [docs.birkinlabs.xyz](https://docs.birkinlabs.xyz)
-- **Issues**: [birkinlabs-core/issues](https://github.com/Birkinlabs-Protocol/birkinlabs-core/issues)
-
----
-
-*Shop freely. Pay trustlessly.*
+# Deploy
+stellar contract deploy \
+  --wasm target/wasm32-unknown-unknown/release/lumenflow_stream.wasm \
+  --source alice \
+  --network testnet
+```
 
 ---
 
-## 📜 License
+## Events emitted
 
-MIT License. Copyright (c) 2026 Birkinlabs Protocol.
+| Event | Topics | Value |
+|---|---|---|
+| `CREATED` | `[CREATED, stream_id]` | `(sender, recipient, deposit, rate_per_second, start_time, stop_time)` |
+| `WITHDRAW` | `[WITHDRAW, stream_id]` | `(recipient, amount)` |
+| `CANCEL` | `[CANCEL, stream_id]` | `(sender_refund, recipient_payout)` |
+| `PAUSED` | `[PAUSED, stream_id]` | `()` |
+| `RESUMED` | `[RESUMED, stream_id]` | `()` |
+
+---
+
+## Contributing
+
+See the root [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+## License
+
+MIT License — Copyright (c) 2026 LumenFlow Protocol.
