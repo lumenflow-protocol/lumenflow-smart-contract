@@ -13,4 +13,7 @@ pub enum StreamError {
     InvalidDuration = 7,
     InsufficientBalance = 8,
     AlreadyCompleted = 9,
+    CliffNotReached = 10,
+    InvalidCliffTime = 11,
+    InvalidRecipient = 12,
 }
