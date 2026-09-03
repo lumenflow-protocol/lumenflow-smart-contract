@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address};
+use soroban_sdk::{contracttype, Address, String};
 
 #[contracttype]
 #[derive(Clone, PartialEq, Debug)]
@@ -9,7 +9,7 @@ pub enum StreamStatus {
     Completed,
 }
 
-/// A payment stream — sender locks tokens and they drip to recipient over time.
+/// A payment stream — maintainer/sender locks tokens and they drip to contributor/recipient over time.
 #[contracttype]
 #[derive(Clone)]
 pub struct Stream {
@@ -26,6 +26,10 @@ pub struct Stream {
     pub start_time: u64,
     /// Ledger timestamp when stream fully drains.
     pub stop_time: u64,
+    /// Milestone cliff timestamp before which recipient cannot withdraw (0 if no cliff).
+    pub cliff_time: u64,
+    /// Stream title or memo (e.g. "Issue #12: Fix Indexer", "Contributor Monthly Grant").
+    pub title: String,
     /// Tokens already withdrawn by the recipient.
     pub withdrawn: i128,
     /// Elapsed seconds already streamed before the last pause (only used when paused).

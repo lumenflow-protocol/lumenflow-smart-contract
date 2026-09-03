@@ -38,7 +38,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 50000
                   }
                 }
               ]
@@ -80,6 +80,12 @@
                 },
                 {
                   "u64": 50
+                },
+                {
+                  "u64": 0
+                },
+                {
+                  "string": "Bounty Completion"
                 }
               ]
             }
@@ -346,6 +352,14 @@
                   "map": [
                     {
                       "key": {
+                        "symbol": "cliff_time"
+                      },
+                      "val": {
+                        "u64": 0
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "deposit"
                       },
                       "val": {
@@ -436,6 +450,14 @@
                     },
                     {
                       "key": {
+                        "symbol": "title"
+                      },
+                      "val": {
+                        "string": "Bounty Completion"
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "token"
                       },
                       "val": {
@@ -459,7 +481,7 @@
             },
             "ext": "v0"
           },
-          4095
+          1555200
         ]
       ],
       [
@@ -504,7 +526,7 @@
             },
             "ext": "v0"
           },
-          4095
+          518400
         ]
       ],
       [
@@ -551,7 +573,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 5000
+                          "lo": 45000
                         }
                       }
                     },
@@ -856,7 +878,7 @@
             },
             "ext": "v0"
           },
-          4095
+          518400
         ]
       ]
     ]
@@ -1008,7 +1030,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 50000
                   }
                 }
               ]
@@ -1042,7 +1064,7 @@
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 10000
+                "lo": 50000
               }
             }
           }
@@ -1114,6 +1136,12 @@
                 },
                 {
                   "u64": 50
+                },
+                {
+                  "u64": 0
+                },
+                {
+                  "string": "Bounty Completion"
                 }
               ]
             }
@@ -1238,6 +1266,9 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
+                  "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                },
+                {
                   "i128": {
                     "hi": 0,
                     "lo": 5000
@@ -1254,6 +1285,12 @@
                 },
                 {
                   "u64": 50
+                },
+                {
+                  "u64": 0
+                },
+                {
+                  "string": "Bounty Completion"
                 }
               ]
             }
@@ -1471,6 +1508,27 @@
           "v0": {
             "topics": [
               {
+                "symbol": "COMPLETE"
+              },
+              {
+                "u64": 0
+              }
+            ],
+            "data": "void"
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000005",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
                 "symbol": "WITHDRAW"
               },
               {
@@ -1566,6 +1624,14 @@
               "map": [
                 {
                   "key": {
+                    "symbol": "cliff_time"
+                  },
+                  "val": {
+                    "u64": 0
+                  }
+                },
+                {
+                  "key": {
                     "symbol": "deposit"
                   },
                   "val": {
@@ -1652,6 +1718,14 @@
                   },
                   "val": {
                     "u64": 50
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "title"
+                  },
+                  "val": {
+                    "string": "Bounty Completion"
                   }
                 },
                 {

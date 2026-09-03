@@ -3,15 +3,19 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/Rust-1.74+-orange)](https://www.rust-lang.org/)
 [![Soroban SDK](https://img.shields.io/badge/Soroban_SDK-21.0.0-8B5CF6)](https://soroban.stellar.org/)
-[![Tests](https://img.shields.io/badge/tests-5%20passing-brightgreen)](./contracts/stream/src/lib.rs)
+[![Tests](https://img.shields.io/badge/tests-10%20passing-brightgreen)](./contracts/stream/src/lib.rs)
 
-> Soroban smart contract powering LumenFlow — real-time per-second payment streaming on Stellar.
+> Soroban smart contract powering LumenFlow — real-time continuous streaming payments, milestone vesting, and top-ups on Stellar for open-source maintainers & contributors.
 
 ---
 
 ## Overview
 
-The stream contract is the on-chain core of LumenFlow. A sender deposits tokens and specifies a rate (tokens per second). The contract tracks elapsed time and releases the proportional amount to the recipient — who can withdraw at any time. The sender can pause, resume, or cancel the stream at any point.
+The stream contract is the on-chain core of LumenFlow. A maintainer locks tokens and specifies a flow rate (tokens per second) to reward contributors working on open-source issues, milestones, and bounties.
+- **Cliff Vesting**: Maintainers can set a milestone cliff before which tokens cannot be withdrawn.
+- **Top-Ups**: Maintainers can extend existing contributor streams with additional funds at any time.
+- **Recipient Address Transfer**: Contributors can safely migrate or rotate their payout wallet.
+- **Storage TTL Extension**: Auto-renews Soroban state TTL so long-running streams never expire.
 
 ---
 
@@ -19,11 +23,11 @@ The stream contract is the on-chain core of LumenFlow. A sender deposits tokens 
 
 ```
 contracts/stream/src/
-├── lib.rs        — public contract functions + tests
-├── types.rs      — Stream struct, StreamStatus enum
-├── storage.rs    — auto-incrementing stream ID, read/write helpers
-├── events.rs     — on-chain events (CREATED, WITHDRAW, CANCEL, PAUSED, RESUMED)
-└── errors.rs     — error codes
+├── lib.rs        — public contract functions + 10 unit tests
+├── types.rs      — Stream struct (with title, cliff_time, token), StreamStatus enum
+├── storage.rs    — auto-incrementing stream ID, TTL management & read/write helpers
+├── events.rs     — on-chain events (CREATED, WITHDRAW, TOP_UP, TRANSFER, CANCEL, PAUSED, RESUMED, COMPLETE)
+└── errors.rs     — typed contract error codes
 ```
 
 ---
@@ -32,41 +36,20 @@ contracts/stream/src/
 
 | Function | Caller | Description |
 |---|---|---|
-| `create_stream(sender, recipient, token, deposit, rate_per_second, duration)` | Sender | Lock tokens and start a stream |
-| `withdraw(stream_id, recipient)` | Recipient | Pull all accrued tokens |
-| `cancel_stream(stream_id, sender)` | Sender | Accrued → recipient, remainder → sender |
-| `pause_stream(stream_id, sender)` | Sender | Freeze accrual |
-| `resume_stream(stream_id, sender)` | Sender | Resume accrual, shifting time window |
-| `balance_of(stream_id)` | Anyone | Tokens available to withdraw right now |
+| `create_stream(sender, recipient, token, deposit, rate_per_second, duration, cliff_time, title)` | Maintainer | Lock tokens and start a stream with issue memo and optional cliff |
+| `withdraw(stream_id, recipient)` | Contributor | Pull all accrued tokens unlocked past cliff |
+| `deposit_more(stream_id, sender, amount)` | Maintainer | Add more tokens to runway and extend stop time |
+| `transfer_recipient(stream_id, current_recipient, new_recipient)` | Contributor | Rotate recipient payout wallet address |
+| `cancel_stream(stream_id, sender)` | Maintainer | Accrued → contributor, remainder → maintainer refund |
+| `pause_stream(stream_id, sender)` | Maintainer | Freeze accrual |
+| `resume_stream(stream_id, sender)` | Maintainer | Resume accrual, shifting time window forward |
+| `balance_of(stream_id)` | Anyone | Tokens currently unlocked and available to withdraw |
+| `vested_of(stream_id)` | Anyone | Total accrued tokens to date regardless of cliff |
 | `get_stream(stream_id)` | Anyone | Full stream state |
-
-### Balance calculation
-
-```
-effective_end = min(now, stop_time)
-elapsed       = effective_end - start_time + elapsed_before_pause
-streamed      = min(elapsed × rate_per_second, deposit)
-available     = streamed - withdrawn
-```
 
 ---
 
-## Getting started
-
-### Prerequisites
-
-```bash
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Add WASM target
-rustup target add wasm32-unknown-unknown
-
-# Install Stellar CLI
-cargo install --locked stellar-cli --features opt
-```
-
-### Run tests
+## Run tests
 
 ```bash
 cargo test
@@ -74,55 +57,25 @@ cargo test
 
 Expected output:
 ```
-running 5 tests
-test test::test_create_and_withdraw     ... ok
-test test::test_cancel_splits_funds     ... ok
-test test::test_pause_and_resume        ... ok
-test test::test_full_stream_completes   ... ok
+running 10 tests
+test test::test_create_and_withdraw             ... ok
+test test::test_cliff_locks_and_unlocks         ... ok
+test test::test_deposit_more_extends_stream     ... ok
+test test::test_transfer_recipient             ... ok
+test test::test_cancel_splits_funds             ... ok
+test test::test_pause_and_resume                ... ok
+test test::test_invalid_cliff_rejected          ... ok
+test test::test_full_stream_completes           ... ok
+test test::test_recipient_cannot_be_sender      ... ok
 test test::test_wrong_recipient_cannot_withdraw ... ok
 
-test result: ok. 5 passed; 0 failed
+test result: ok. 10 passed; 0 failed
 ```
 
-### Build WASM
+## Build WASM
 
 ```bash
 cargo build --target wasm32-unknown-unknown --release
 ```
 
 Output: `target/wasm32-unknown-unknown/release/lumenflow_stream.wasm`
-
-### Deploy to testnet
-
-```bash
-# Fund an account
-stellar keys generate --global alice --network testnet --fund
-
-# Deploy
-stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/lumenflow_stream.wasm \
-  --source alice \
-  --network testnet
-```
-
----
-
-## Events emitted
-
-| Event | Topics | Value |
-|---|---|---|
-| `CREATED` | `[CREATED, stream_id]` | `(sender, recipient, deposit, rate_per_second, start_time, stop_time)` |
-| `WITHDRAW` | `[WITHDRAW, stream_id]` | `(recipient, amount)` |
-| `CANCEL` | `[CANCEL, stream_id]` | `(sender_refund, recipient_payout)` |
-| `PAUSED` | `[PAUSED, stream_id]` | `()` |
-| `RESUMED` | `[RESUMED, stream_id]` | `()` |
-
----
-
-## Contributing
-
-See the root [CONTRIBUTING.md](../CONTRIBUTING.md).
-
-## License
-
-MIT License — Copyright (c) 2026 LumenFlow Protocol.
